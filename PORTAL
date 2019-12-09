@@ -1,0 +1,362 @@
+Sub PORTAL(wsOriginal As Worksheet, system As String, caminho As String, dados_mes As String)
+
+'PREPARANDO
+
+wsOriginal.Activate
+
+Sheets(system).Select
+
+Dim cabecalho As String
+
+cabecalho = InputBox("Digite a célula de referencia para a coluna inicial do CABEÇALHO:")
+
+cabecalho_linha = Range(cabecalho).Row
+
+cel_inicial = Range(cabecalho).Offset(1, 0).Address
+
+cabecalho_final = Range(cabecalho).End(xlToRight).Address
+
+c = Range(cabecalho_final).Column
+
+letra_c = WorksheetFunction.Substitute(cabecalho_final, cabecalho_linha, "")
+
+letra_c = WorksheetFunction.Substitute(letra_c, "$", "")
+
+'---
+ 'TIRANDO A SUJEIRA
+    
+    'removendo desabilitados
+
+'desativado <> da ultima coluna
+'desativado na coluna 26
+    
+Range(cabecalho).Select
+Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.AutoFilter Field:=26, Criteria1:="Sim"
+
+    ActiveWindow.Zoom = 55
+
+Range(cabecalho).Select
+
+cel_final = ActiveCell.End(xlDown).Address
+
+LastRow = ActiveSheet.UsedRange.Rows.count
+
+If Range(cel_final).Value <> "" Then
+    
+    Range(cel_inicial & ":" & letra_c & LastRow).SpecialCells(xlCellTypeVisible).Select
+
+    Selection.EntireRow.Delete
+
+    End If
+       
+     Selection.AutoFilter
+     
+Range(cabecalho).Select
+Range(Selection, Selection.End(xlToRight)).Select
+Range(Selection, Selection.End(xlDown)).Select
+    
+    Selection.AutoFilter
+
+'removendo <> usuário interno
+
+Range(cabecalho).Select
+Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.AutoFilter Field:=9, Criteria1:="<>Usuario Interno"
+
+    ActiveWindow.Zoom = 55
+
+Range(cabecalho).Select
+
+cel_final = ActiveCell.End(xlDown).Address
+
+LastRow = ActiveSheet.UsedRange.Rows.count
+
+If Range(cel_final).Value <> "" Then
+    
+    Range(cel_inicial & ":" & letra_c & LastRow).SpecialCells(xlCellTypeVisible).Select
+
+    Selection.EntireRow.Delete
+
+    End If
+
+Selection.AutoFilter
+     
+Range(cabecalho).Select
+Range(Selection, Selection.End(xlToRight)).Select
+Range(Selection, Selection.End(xlDown)).Select
+    
+    Selection.AutoFilter
+
+'removendo no campo e-mail os dados que não contém "@toyota.com.br"
+
+Range(cabecalho).Select
+Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.AutoFilter Field:=12, Criteria1:="<>*@toyota.com.br*"
+
+    ActiveWindow.Zoom = 55
+
+Range(cabecalho).Select
+
+cel_final = ActiveCell.End(xlDown).Address
+
+LastRow = ActiveSheet.UsedRange.Rows.count
+
+If Range(cel_final).Value <> "" Then
+    
+    Range(cel_inicial & ":" & letra_c & LastRow).SpecialCells(xlCellTypeVisible).Select
+
+    Selection.EntireRow.Delete
+
+    End If
+
+Selection.AutoFilter
+     
+Range(cabecalho).Select
+Range(Selection, Selection.End(xlToRight)).Select
+Range(Selection, Selection.End(xlDown)).Select
+    
+    Selection.AutoFilter
+
+'---
+
+'NOMEANDO AS COLUNAS
+
+Range(cabecalho_final).Offset(0, 1).Select
+
+ActiveCell.FormulaR1C1 = "ATIVOS"
+    inicio_atv = ActiveCell.Offset(1, 0).Address
+    col_ativos = Range(inicio_atv).Column
+    
+    ActiveCell.Offset(0, 1).Select
+    ActiveCell.FormulaR1C1 = "DMES"
+    inicio_dmes = ActiveCell.Offset(1, 0).Address
+    
+    ActiveCell.Offset(0, 1).Select
+    ActiveCell.FormulaR1C1 = "DFULL"
+    inicio_dfull = ActiveCell.Offset(1, 0).Address
+    
+    ActiveCell.Offset(0, 1).Select
+    ActiveCell.FormulaR1C1 = "OBS.:"
+    obs = ActiveCell.Address
+    inicio_obs = ActiveCell.Offset(1, 0).Address
+    col_obs = Range(inicio_obs).Column
+
+letra_obs = WorksheetFunction.Substitute(obs, cabecalho_linha, "")
+
+letra_obs = WorksheetFunction.Substitute(letra_obs, "$", "")
+    
+'REFERENCIANDO
+Range("a1").Select
+
+Dim obj_range As Range
+
+Set obj_range = ActiveSheet.Range("A" & cabecalho_linha & ":IV" & cabecalho_linha)
+
+With obj_range
+
+nomes = .Find("NOME").Address
+
+Email = .Find("EMAIL").Address
+
+End With
+
+linha_inicio = Range(nomes).Offset(1, 0).Row
+final = Range(nomes).End(xlDown).Row
+
+'estipulando limite de range para autofill
+
+    final_atv = Range(inicio_atv).Offset(final - linha_inicio, 0).Address
+    
+    final_dmes = Range(final_atv).Offset(0, 1).Address
+    final_dfull = Range(final_atv).Offset(0, 2).Address
+    
+'-
+
+'PROCV
+
+Range(nomes).Select
+col_nomes = Range(nomes).Column
+col_Email = Range(Email).Column
+
+'ATIVOS
+
+Range(inicio_atv).Select
+
+num_col = ActiveCell.Column
+num_col_nomes = (num_col * -1) + col_nomes
+num_col_email = (num_col * -1) + col_Email
+
+ActiveCell.FormulaR1C1 = _
+"=IFERROR(VLOOKUP(RC[" & num_col_nomes & "],'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0),VLOOKUP(INDEX('[LISTA_DE_USUARIOS_AD.xls]showAllUsersR" & _
+"eport'!C2:C2,MATCH(RC[" & num_col_email & "],'[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport'!C4:C4,0),1),'[TDB_SEC_DADOS_FUNCIONARIOS.xls]shee" & _
+"t1'!C3:C3,1,0))" & _
+        ""
+    
+    Selection.AutoFill Destination:=Range(inicio_atv & ":" & final_atv)
+    
+'DMES
+
+    Range(inicio_dmes).Select
+
+    Workbooks("TDB_SEC_DADOS_FUNCIONARIOS.xls").Close SaveChanges:=False
+
+num_col = ActiveCell.Column
+num_col_nomes = (num_col * -1) + col_nomes
+num_col_email = (num_col * -1) + col_Email
+
+    ActiveCell.FormulaR1C1 = _
+"=IFERROR(VLOOKUP(RC[" & num_col_nomes & "],'[" & dados_mes & "]sheet1'!C2,1,0),VLOOKUP(INDEX('[LISTA_DE_USUARIOS_AD.xls]showAllUsersR" & _
+"eport'!C2:C2,MATCH(RC[" & num_col_email & "],'[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport'!C4:C4,0),1),'[" & dados_mes & "]shee" & _
+"t1'!C2,1,0))" & _
+        ""
+        
+    Selection.AutoFill Destination:=Range(inicio_dmes & ":" & final_dmes)
+    
+'DFULL
+    
+    Range(inicio_dfull).Select
+    
+    Workbooks(dados_mes).Close SaveChanges:=False
+
+num_col = ActiveCell.Column
+num_col_nomes = (num_col * -1) + col_nomes
+num_col_email = (num_col * -1) + col_Email
+    
+    ActiveCell.FormulaR1C1 = _
+"=IFERROR(VLOOKUP(RC[" & num_col_nomes & "],'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2,1,0),VLOOKUP(INDEX('[LISTA_DE_USUARIOS_AD.xls]showAllUsersR" & _
+"eport'!C2:C2,MATCH(RC[" & num_col_email & "],'[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport'!C4:C4,0),1),'[TDB_SEC_DEMITIDOS_FULL.xls]shee" & _
+"t1'!C2,1,0))" & _
+        ""
+    
+    Selection.AutoFill Destination:=Range(inicio_dfull & ":" & final_dfull)
+
+    Workbooks("TDB_SEC_DEMITIDOS_FULL.xls").Close SaveChanges:=False
+ 
+'FILTRO AVANÇADO
+    
+    'Preparando criterios
+
+'**aperfeiçoar para um for, contém e input
+
+Sheets("CRITERIO").Select
+    Range("a1").Select
+    
+    
+    EncontraString = InputBox("Informe o criterio a procurar:" & Chr(13) & "Ou se prefere sair digite FIM")
+    
+    Do While UCase(EncontraString) <> "FIM"
+    
+    
+    Sheets("CRITERIO").Select
+    Range("a1").Select
+
+        If Trim(EncontraString) <> "" Then
+            With Sheets("CRITERIO").Range("A:Z")
+                Set Intervalo = .Find(What:=EncontraString, _
+                                      After:=.Cells(1), _
+                                      LookIn:=xlValues, _
+                                      LookAt:=xlWhole, _
+                                     SearchOrder:=xlByRows, _
+                                     SearchDirection:=xlPrevious, _
+                                     MatchCase:=False)
+        
+                End With
+                End If
+                Do While Intervalo Is Nothing
+
+                    EncontraString = InputBox("O criterio informado não foi localizado :(" _
+    & Chr(13) & "Informe outro criterio a procurar:" & Chr(13) & "Ou se prefere sair digite FIM")
+                If UCase(EncontraString) = "FIM" Then
+      
+      Workbooks("LISTA_DE_USUARIOS_AD.xls").Close SaveChanges:=False
+    
+                        Exit Sub
+                        End If
+                If Trim(EncontraString) <> "" Then
+            With Sheets("CRITERIO").Range("A:Z")
+                Set Intervalo = .Find(What:=EncontraString, _
+                                      After:=.Cells(1), _
+                                      LookIn:=xlValues, _
+                                      LookAt:=xlWhole, _
+                                     SearchOrder:=xlByRows, _
+                                     SearchDirection:=xlPrevious, _
+                                     MatchCase:=False)
+                End With
+                End If
+                Loop
+                
+                Application.Goto Intervalo, True
+    
+    ActiveCell.Offset(1, 0).Select
+    criterio_inicio = ActiveCell.Address
+    ActiveCell.End(xlToRight).Select
+    ActiveCell.End(xlDown).Select
+    criterio_final = ActiveCell.Address
+    
+    
+    Set myRange = Worksheets("CRITERIO").Range(criterio_inicio & ":" & criterio_final)
+   
+    Sheets(system).Select
+    
+    LastRow = ActiveSheet.UsedRange.Rows.count
+       
+    Lastcell = letra_obs & LastRow
+
+
+    Set myCriterioRange = Worksheets(system).Range(cabecalho & ":" & Lastcell)
+    
+    
+    myCriterioRange.AdvancedFilter Action:=xlFilterInPlace, CriteriaRange:= _
+    myRange, Unique:=False
+
+    Range(nomes).Select
+    validacao = ActiveCell.End(xlDown).Address
+
+    
+    If Range(validacao).Value <> "" Then
+    
+    Range(inicio_obs & ":" & Lastcell).SpecialCells(xlCellTypeVisible).Value = UCase(EncontraString)
+    MsgBox "Criterio " & UCase(EncontraString) & " adicionado"
+    ActiveSheet.ShowAllData
+    Sheets("CRITERIO").Select
+    Range("a1").Select
+    EncontraString = InputBox("Informe outro criterio a procurar:" & Chr(13) & "Ou se prefere sair digite FIM")
+       
+    Else
+    
+    Range("a1").Select
+    ActiveSheet.ShowAllData
+    Sheets("CRITERIO").Select
+    Range("a1").Select
+    
+    EncontraString = InputBox("O criterio informado não tem nenhum registro :(" _
+    & Chr(13) & "Informe outro criterio a procurar:" & Chr(13) & "Ou se prefere sair digite FIM")
+    
+    End If
+    
+    Loop
+
+'---
+
+'finalizando só com o necessário
+
+'Sheets(origem).Select
+Sheets(system).Select
+Range(cabecalho).Select
+Range(Selection, Selection.End(xlToRight)).Select
+Range(Selection, Selection.End(xlDown)).Select
+
+
+Selection.AutoFilter Field:=col_ativos, Criteria1:="#N/D"
+
+Selection.AutoFilter Field:=col_obs, Criteria1:="="
+
+'Identificar aba
+
+Call Identificar_aba(caminho, cabecalho)
+
+End Sub
