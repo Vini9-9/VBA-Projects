@@ -1,0 +1,366 @@
+Sub Periodicos()
+
+Dim system As String
+Dim caminho As String
+Dim dados_mes As String
+
+system = ActiveWorkbook.name
+
+system = WorksheetFunction.Substitute(system, "MODELO_", "")
+system = WorksheetFunction.Substitute(system, ".xls", "")
+
+If system = "" Then
+
+Exit Sub
+
+End If
+
+'Preparando
+
+Dim wsOriginal As Worksheet
+Dim wsUsuarios As Worksheet
+Dim EncontraString As String
+Dim Intervalo As Range
+Dim LastRow As Integer
+Set wsOriginal = Workbooks(ActiveWorkbook.name).Worksheets(ActiveSheet.name)
+Dim resultado As VbMsgBoxResult
+
+ano = Year(Now)
+ano_ant = ano - 1
+
+
+'definindo mes_ant
+
+mes_atual = Month(Now)
+
+If mes_atual = 1 Then
+
+mes_ant = 12
+
+Else
+
+mes_ant = mes_atual - 1
+
+End If
+
+
+'Primeira maiuscula
+nome_mes_ant = StrConv(MonthName(mes_ant), vbProperCase)
+
+'para mês de janeiro pegar o arquivo de dezembro do ano passado
+
+If mes_ant = 12 Then
+
+    resultado = MsgBox("Selecionar o arquivo referente a" & mes_ant & " - " & Left(nome_mes_ant, 3) & Right(ano_ant, 2) & " ?", vbYesNo)
+
+
+If resultado = vbYes Then
+
+    caminho = "\\tdbsbc01\Comum\ComumIT\" & ano_ant & "\Planning & Security\Security\SOX\CONTROLES PERIÓDICOS IT\" & mes_ant & " - " & Left(nome_mes_ant, 3) & Right(ano_ant, 2) & "\4 Usuários Ativos"
+    
+
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DADOS_FUNCIONARIOS.xls", ReadOnly:=True
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DEMITIDOS_FULL.xls", ReadOnly:=True
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DEMITIDOS_PERIODO_" & nome_mes_ant & ".xls", ReadOnly:=True
+    
+    dados_mes = ActiveWorkbook.name
+    
+Else
+    
+    mes_ref = InputBox("Digite o número do mês que gostaria")
+    nome_mes_ref = StrConv(MonthName(mes_ref), vbProperCase)
+    
+    caminho = "\\tdbsbc01\Comum\ComumIT\" & ano & "\Planning & Security\Security\SOX\CONTROLES PERIÓDICOS IT\" & mes_ref & " - " & Left(nome_mes_ref, 3) & Right(ano, 2) & "\4 Usuários Ativos"
+    
+
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DADOS_FUNCIONARIOS.xls", ReadOnly:=True
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DEMITIDOS_FULL.xls", ReadOnly:=True
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DEMITIDOS_PERIODO_" & nome_mes_ant & ".xls", ReadOnly:=True
+    
+    dados_mes = ActiveWorkbook.name
+    
+End If
+
+
+Else
+   
+   resultado = MsgBox("Selecionar o arquivo referente a " & mes_ant & " - " & Left(nome_mes_ant, 3) & Right(ano, 2) & " ?", vbYesNo)
+
+If resultado = vbYes Then
+   caminho = "\\tdbsbc01\Comum\ComumIT\" & ano & "\Planning & Security\Security\SOX\CONTROLES PERIÓDICOS IT\" & mes_ant & " - " & Left(nome_mes_ant, 3) & Right(ano, 2) & "\4 Usuários Ativos"
+   
+
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DADOS_FUNCIONARIOS.xls", ReadOnly:=True
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DEMITIDOS_FULL.xls", ReadOnly:=True
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DEMITIDOS_PERIODO_" & nome_mes_ant & ".xls", ReadOnly:=True
+    
+    dados_mes = ActiveWorkbook.name
+    
+Else
+
+    mes_ref = InputBox("Digite o número do mês que gostaria")
+    
+    
+'Erro mês
+    
+    Do While mes_ref > 12 Or mes_ref < 1
+    
+    mes_ref = InputBox("Você não digitou um número entre 1 e 12." & Chr(13) & "Por favor, digite o número do mês que gostaria:")
+    
+    Loop
+'---
+    
+    nome_mes_ref = StrConv(MonthName(mes_ref), vbProperCase)
+    
+    caminho = "\\tdbsbc01\Comum\ComumIT\" & ano & "\Planning & Security\Security\SOX\CONTROLES PERIÓDICOS IT\" & mes_ref & " - " & Left(nome_mes_ref, 3) & Right(ano, 2) & "\4 Usuários Ativos"
+    
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DADOS_FUNCIONARIOS.xls", ReadOnly:=True
+
+   
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DEMITIDOS_PERIODO_" & nome_mes_ref & ".xls", ReadOnly:=True
+
+    dados_mes = ActiveWorkbook.name
+    
+    Workbooks.Open Filename:=caminho & "\TDB_SEC_DEMITIDOS_FULL.xls", ReadOnly:=True
+
+
+End If
+    
+    If system = "TOIOS" Or system = "GF" Then
+
+'VERIFICAR SE ARQUIVO JÁ EXISTE
+
+Dim strPath As Variant
+
+'Arquivo que verificaremos
+strPath = caminho & "\LISTA_DE_USUARIOS_" & system & ".xls"
+If Dir(strPath) = vbNullString Then
+strCheck = False
+Else
+strCheck = True
+End If
+
+
+If strCheck Then
+mensagem = MsgBox("O arquivo: 'LISTA_DE_USUARIOS_" & system & ".xls' já existe!", vbInformation)
+'Bloco de ação da Rotina caso o arquivo exista.
+
+
+Else
+  
+
+MsgBox "Selecione o arquivo txt", vbOKOnly, "Seleção de Arquivo"
+
+'ABRIR ARQUIVO
+arquivo = " "
+
+
+Dim fd As FileDialog
+
+'CAIXA DE SELEÇÃO DE ARQUIVO
+
+Set fd = Application.FileDialog(msoFileDialogFilePicker)
+
+Dim arquivo_temp As Variant
+
+With fd
+   .AllowMultiSelect = True
+   If .Show = -1 Then
+      For Each arquivo_temp In .SelectedItems
+         arquivo = arquivo_temp
+      Next arquivo_temp
+   End If
+End With
+
+Set fd = Nothing
+
+If system = "GF" Then
+
+Workbooks.OpenText arquivo _
+, Origin:=xlWindows, StartRow:=1, DataType:=xlDelimited, _
+        TextQualifier:=xlDoubleQuote, ConsecutiveDelimiter:=False, Tab:=True, _
+        Semicolon:=False, Comma:=False, Space:=False, Other:=True, OtherChar _
+        :="|", FieldInfo:=Array(Array(1, 1), Array(2, 1), Array(3, 1), Array(4, 1), Array(5, _
+        1), Array(6, 1)), TrailingMinusNumbers:=True
+
+ElseIf system = "TOIOS" Then
+
+'TOIOS
+
+Workbooks.OpenText arquivo _
+, Origin:=xlWindows, StartRow:=1, DataType:=xlFixedWidth, _
+        FieldInfo:=Array(Array(0, 1), Array(14, 1), Array(55, 1), Array(61, 1), Array(112, 1), _
+        Array(118, 1), Array(139, 1), Array(150, 1)), TrailingMinusNumbers:=True
+
+End If
+
+'Ajuste automatico de coluna do excel
+Cells.Select
+
+Cells.EntireColumn.AutoFit
+
+dircopia = caminho & "\"
+nomecopia = "LISTA_DE_USUARIOS_" & system
+ 
+ActiveWorkbook.SaveAs Filename:= _
+dircopia & nomecopia, _
+FileFormat:=xlNormal, Password:="", WriteResPassword:="", _
+ReadOnlyRecommended:=False, CreateBackup:=False
+
+
+
+End If
+End If
+    
+    If system = "PEOPLE" Or system = "EP" Or system = "RH" Then
+    
+    system = "PEOPLE"
+    
+    Dim fazer As VbMsgBoxResult
+    
+    Call SISTEMAS.PEOPLE(wsOriginal, system, caminho, dados_mes, fazer)
+    
+    fazer = MsgBox("Quer fazer do outro PEOPLE também?", vbYesNo)
+    
+    If fazer = vbYes Then
+    
+    Call SISTEMAS.PEOPLE(wsOriginal, system, caminho, dados_mes, fazer)
+    
+    End If
+    
+    Workbooks("TDB_SEC_DADOS_FUNCIONARIOS.xls").Close SaveChanges:=False
+    Workbooks(dados_mes).Close SaveChanges:=False
+    Workbooks("TDB_SEC_DEMITIDOS_FULL.xls").Close SaveChanges:=False
+    
+    Workbooks("LISTA_DE_USUARIOS_AD.xls").Close SaveChanges:=False
+    
+    MsgBox "Macro executada com sucesso"
+    
+    Exit Sub
+    
+        ElseIf system = "SIS" Then
+    
+        Workbooks.Open Filename:=caminho & "\LISTA_DE_USUARIOS_AD.xls", ReadOnly:=True
+        
+        Call SISTEMAS.SIS(wsOriginal, system, caminho, dados_mes)
+        
+        Workbooks("LISTA_DE_USUARIOS_AD.xls").Close SaveChanges:=False
+        
+        MsgBox "Macro executada com sucesso"
+        
+        Exit Sub
+        
+        End If
+    
+    Workbooks.Open Filename:=caminho & "\LISTA_DE_USUARIOS_" & system & ".xls", ReadOnly:=True
+    
+    Set wsUsuarios = Workbooks(ActiveWorkbook.name).Worksheets(ActiveSheet.name)
+    
+    Cells.Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    wsOriginal.Activate
+    
+    Sheets.Add Before:=ActiveSheet
+    ActiveSheet.name = system
+    
+    Sheets(system).Select
+    
+    Range("A1").Select
+    ActiveSheet.Paste
+    Range("A1").Select
+    
+    'Ajuste automatico de coluna do excel
+    Cells.Select
+    
+    resultado = MsgBox("Fazer Autofit das células?", vbYesNo)
+
+        If resultado = vbYes Then
+
+        Cells.EntireColumn.AutoFit
+    
+        End If
+    
+    'abrir lista de usuarios e selecionar uma célula
+    
+    wsUsuarios.Activate
+    
+    Range("a1").Select
+    
+    Application.CutCopyMode = False
+    
+    Workbooks("LISTA_DE_USUARIOS_" & system & ".xls").Close SaveChanges:=False
+    
+    End If
+
+If system = "AD" Then
+
+Call SISTEMAS.AD(system, caminho, dados_mes)
+
+Else
+    If system = "FATOR" Then
+    
+    Call SISTEMAS.FATOR(system, caminho, dados_mes)
+    
+    Else
+        If system = "GF" Then
+        
+        Workbooks.Open Filename:=caminho & "\LISTA_DE_USUARIOS_AD.xls", ReadOnly:=True
+        
+        Call SISTEMAS.GF(wsOriginal, system, caminho, dados_mes)
+        
+        Else
+
+                If system = "PORTAL" Then
+                
+                Workbooks.Open Filename:=caminho & "\LISTA_DE_USUARIOS_AD.xls", ReadOnly:=True
+                
+                Call SISTEMAS.PORTAL(wsOriginal, system, caminho, dados_mes)
+                
+                Workbooks("LISTA_DE_USUARIOS_AD.xls").Close SaveChanges:=False
+                
+                Else
+                    If system = "RONDA" Then
+                        
+                    Workbooks.Open Filename:=caminho & "\LISTA_DE_USUARIOS_AD.xls", ReadOnly:=True
+                        
+                    Call SISTEMAS.RONDA(wsOriginal, system, caminho, dados_mes)
+                    
+                    Workbooks("LISTA_DE_USUARIOS_AD.xls").Close SaveChanges:=False
+                    
+                    Else
+                            If system = "TOIOS" Then
+                            
+                            Workbooks.Open Filename:=caminho & "\LISTA_DE_USUARIOS_AD.xls", ReadOnly:=True
+                            
+                            Call SISTEMAS.TOIOS(wsOriginal, system, caminho, dados_mes)
+                            
+                                Else
+                                    If system = "TRANSFERPRICE" Then
+                                
+                                Workbooks.Open Filename:=caminho & "\LISTA_DE_USUARIOS_AD.xls", ReadOnly:=True
+                                
+                                Call SISTEMAS.TransferPrice(wsOriginal, system, caminho, dados_mes)
+                                
+                                Workbooks("LISTA_DE_USUARIOS_AD.xls").Close SaveChanges:=False
+                                
+                                    Else
+                                
+                                    MsgBox ("Não foi localizado esse sistema")
+                            
+                                    End If
+                                    End If
+                                    End If
+                                    End If
+                                    End If
+                                    End If
+                                    End If
+'melhoria
+'Call Identificar_aba(caminho, cabecalho)
+'    Workbooks("TDB_SEC_DADOS_FUNCIONARIOS.xls").Close SaveChanges:=False
+'    Workbooks(dados_mes).Close SaveChanges:=False
+'    Workbooks("TDB_SEC_DEMITIDOS_FULL.xls").Close SaveChanges:=False
+
+MsgBox "Macro executada com sucesso"
+
+End Sub
