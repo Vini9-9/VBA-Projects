@@ -1,0 +1,45 @@
+Sub Identificar_aba(caminho As String, cabecalho As String)
+
+'Identificar aba
+
+validacao = Range(cabecalho).End(xlDown).Value
+
+origem = ActiveSheet.name
+
+If validacao = "" Then
+
+'Azul escuro
+
+ActiveWorkbook.Sheets(origem).Tab.ColorIndex = 5
+
+Range("a1").Select
+
+MsgBox "Seu relatório não teve nenhuma pendência :)"
+
+
+'SALVAR ARQUIVO
+
+dircopia = caminho & "\VERIFICAÇÃO\"
+nomecopia = origem & "_OK"
+ 
+ActiveWorkbook.SaveAs Filename:= _
+dircopia & nomecopia, _
+FileFormat:=xlNormal, Password:="", WriteResPassword:="", _
+ReadOnlyRecommended:=False, CreateBackup:=False
+
+Else
+
+MsgBox "Seu relatório teve pendência(s) :( "
+
+'SALVAR ARQUIVO
+
+dircopia = caminho & "\VERIFICAÇÃO\"
+nomecopia = origem & "_VERIFICAR"
+
+ActiveWorkbook.SaveAs Filename:= _
+dircopia & nomecopia, _
+FileFormat:=xlNormal, Password:="", WriteResPassword:="", _
+ReadOnlyRecommended:=False, CreateBackup:=False
+
+End If
+End Sub
