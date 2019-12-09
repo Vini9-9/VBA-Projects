@@ -1,0 +1,729 @@
+Sub SIS(wsOriginal As Worksheet, system As String, caminho As String, dados_mes As String)
+
+wsOriginal.Activate
+
+Sheets("CRITERIO").Select
+Range("a1").Select
+Selection.End(xlDown).Select
+Selection.End(xlToRight).Select
+terceiro = ActiveCell.Address
+Range("a1").Select
+
+
+'Escolhendo qual sistema fazer
+
+comando = UCase(InputBox("Selecione o sistema que gostaria de realizar a verificação:" & Chr(13) & _
+"NCS" & Chr(9) & _
+"SVD" & Chr(9) & _
+"CT" & Chr(9) & _
+"SPP" & Chr(9) & _
+"LPP" & Chr(9) & _
+"NQC" & Chr(9) & _
+"Ou se prefere sair clique em cancelar"))
+
+If comando = "" Then
+    
+        Workbooks("TDB_SEC_DADOS_FUNCIONARIOS.xls").Close SaveChanges:=False
+        Workbooks(dados_mes).Close SaveChanges:=False
+        Workbooks("TDB_SEC_DEMITIDOS_FULL.xls").Close SaveChanges:=False
+        
+        Exit Sub
+End If
+
+
+Do While comando <> "NCS" And comando <> "SVD" _
+And comando <> "CT" And comando <> "SPP" _
+And comando <> "LPP" And comando <> "NQC" And comando <> ""
+
+
+comando = UCase(InputBox("Você digitou uma opção não válida :(" & Chr(13) & "Por favor, digite uma opção válida:" _
+& Chr(13) & _
+"NCS" & Chr(9) & _
+"SVD" & Chr(9) & _
+"CT" & Chr(9) & _
+"SPP" & Chr(9) & _
+"LPP" & Chr(9) & _
+"NQC" & Chr(13) & "Ou se prefere sair digite FIM"))
+      
+      If comando = "" Then
+      Exit Sub
+      End If
+
+Loop
+
+'---
+
+Do While comando = "NCS" Or comando = "SVD" _
+Or comando = "CT" Or comando = "SPP" _
+Or comando = "LPP" Or comando = "NQC"
+
+
+
+'Abir arquivo LISTA_DE_USUARIOS_ copiar e depois colar na plan atual
+
+
+Workbooks.Open Filename:=caminho & "\LISTA_DE_USUARIOS_" & comando & ".xls", ReadOnly:=True
+
+    Cells.Select
+    Selection.Copy
+    
+    wsOriginal.Activate
+    Sheets.Add Before:=ActiveSheet
+    ActiveSheet.name = comando
+    Sheets(comando).Select
+    
+    Range("A1").Select
+    ActiveSheet.Paste
+    Application.CutCopyMode = False
+    Range("A1").Select
+    
+    Workbooks("LISTA_DE_USUARIOS_" & comando & ".xls").Close SaveChanges:=False
+
+Range("F6").Value = "True or false"
+Range("G6").Value = "ATIVOS"
+Range("H6").Value = "DMES"
+Range("I6").Value = "DFULL"
+Range("J6").Value = "OBS.:"
+
+
+
+'--------------------------------------------------------------------------
+                                'NCS
+                                    
+If Range("A3").Text Like "*" & "NCS - Novo Sistema Comercial" & "*" Then
+    
+'Tirando a sujeira
+    
+    'Excluir somente o que está como false (no filtro)
+      
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+      
+Selection.AutoFilter Field:=6, Criteria1:="false"
+    
+     cel_final = Range("f6").End(xlDown).Address
+    
+    If Range(cel_final).Value <> "" Then
+    
+    Range("a7:" & cel_final).SpecialCells(xlCellTypeVisible).Select
+    Selection.EntireRow.Delete
+    
+    End If
+    
+    Selection.AutoFilter Field:=6
+    
+'Excluir DLR (no filtro)
+    Selection.AutoFilter Field:=3, Criteria1:="DLR"
+    
+    cel_final = Range("f6").End(xlDown).Address
+    
+    If Range(cel_final).Value <> "" Then
+    
+    Range("a7:" & cel_final).SpecialCells(xlCellTypeVisible).Select
+    Selection.EntireRow.Delete
+    
+    End If
+    
+    Selection.AutoFilter Field:=3
+    
+'FORMULA ATIVOS
+        'SEERRO(PROCV(A7;ATIVOS;1;0);PROCV(ÍNDICE([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!$B:$B;CORRESP(B7;[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C$:C$;0));ATIVOS;1;0))
+    
+'linha definirá o intervalo máximo
+    
+    linha = Range("F6").End(xlDown).Row
+    
+    'caminho = "\\tdbsbc01\Comum\ComumIT\" & ano & "\Planning & Security\Security\SOX\CONTROLES PERIÓDICOS IT\" & mes_ant & " - " & Left(nome_mes_ant, 3) & Right(ano, 2) & "\4 Usuários Ativos"
+    
+    Range("G7").Select
+    ActiveCell.FormulaR1C1 = _
+    "=IFERROR(VLOOKUP(RC[-6],'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-2],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-3]:C[-3],0)),'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0))"
+
+    Range("G7").Select
+    Selection.AutoFill Destination:=Range("$G$7:$G$" & linha)
+    
+    
+    Range("H7").Select
+
+ActiveCell.FormulaR1C1 = "=IFERROR(VLOOKUP(RC[-7],'[" & dados_mes & "]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-3],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-4]:C[-4],0)),'[" & dados_mes & "]sheet1'!C2:C2,1,0))"
+    
+    Range("H7").Select
+    Selection.AutoFill Destination:=Range("$H$7:$H$" & linha)
+    
+    
+    Range("I7").Select
+    
+    ActiveCell.FormulaR1C1 = _
+"=IFERROR(VLOOKUP(RC[-8],'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-4],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-5]:C[-5],0)),'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2:C2,1,0))"
+
+    Range("I7").Select
+    
+    Selection.AutoFill Destination:=Range("$I$7:$I$" & linha)
+
+'FILTRO AVANÇADO PARA TERCEIROS
+    
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Range("A6:J" & linha).AdvancedFilter Action:=xlFilterInPlace, CriteriaRange:= _
+        Sheets("CRITERIO").Range("A1:" & terceiro), Unique:=False
+    Range("j6").Select
+    final = Range("I6").End(xlDown).Offset(0, 1).Address
+    Range("J7:" & final).SpecialCells(xlCellTypeVisible).Value = "TERCEIRO"
+    
+
+ActiveSheet.ShowAllData
+
+Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+
+'filtro brazul --> terceiro
+
+Selection.AutoFilter Field:=1, Criteria1:="*brazul*"
+    Range("J6").Select
+    final = Range("I6").End(xlDown).Offset(0, 1).Address
+    Range("J7:" & final).SpecialCells(xlCellTypeVisible).Value = "TERCEIRO"
+    
+'finalizando com apenas o necessário
+    ActiveSheet.ShowAllData
+    Range("a6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+   Selection.AutoFilter Field:=7, Criteria1:="#N/D"
+   Selection.AutoFilter Field:=10, Criteria1:="="
+
+  
+'------------------------------------------------------------------------
+                                    'SVD
+     
+ElseIf Range("A3").Text Like "*" & "Sistema de Venda Direta" & "*" Then
+         
+    
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.AutoFilter Field:=6, Criteria1:="false"
+    
+    
+    'Tirando a sujeira
+    
+    'Excluir somente o que está como false (no filtro)
+      
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+      
+Selection.AutoFilter Field:=6, Criteria1:="false"
+    
+    cel_final = Range("f6").End(xlDown).Address
+    
+    If Range(cel_final).Value <> "" Then
+    
+    Range("a7:" & cel_final).SpecialCells(xlCellTypeVisible).Select
+    Selection.EntireRow.Delete
+    
+    End If
+    
+    Selection.AutoFilter Field:=6
+    
+    'removendo dealer e accesscontrol
+     
+    Selection.AutoFilter Field:=3, Criteria1:="dealer", Operator:=xlOr, Criteria2:="accesscontrol"
+    cel_final = Range("f6").End(xlDown).Address
+    If Range(cel_final).Value <> "" Then
+    
+    Range("a7:" & cel_final).SpecialCells(xlCellTypeVisible).Select
+    Selection.EntireRow.Delete
+    
+    End If
+    
+    Selection.AutoFilter Field:=3
+    
+'FORMULA ATIVOS
+        'SEERRO(PROCV(A7;ATIVOS;1;0);PROCV(ÍNDICE([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!$B$2:$B$8690;CORRESP(B7;[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C$2:C$8690;0));ATIVOS;1;0))
+ 
+'linha definirá o intervalo máximo
+
+    linha = Range("f6").End(xlDown).Row
+    
+    'caminho = "\\tdbsbc01\Comum\ComumIT\" & ano & "\Planning & Security\Security\SOX\CONTROLES PERIÓDICOS IT\" & mes_ant & " - " & Left(nome_mes_ant, 3) & Right(ano, 2) & "\4 Usuários Ativos"
+    
+    Range("G7").Select
+    
+   '"=IFERROR(VLOOKUP(RC[-6],'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-2],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-3]:C[-3],0)),'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0))"
+    
+ActiveCell.FormulaR1C1 = _
+"=IFERROR(VLOOKUP(RC[-6],'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-2],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-3]:C[-3],0)),'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0))"
+    
+    Range("G7").Select
+    Selection.AutoFill Destination:=Range("$G$7:$G$" & linha)
+    
+    Range("H7").Select
+ActiveCell.FormulaR1C1 = _
+"=IFERROR(VLOOKUP(RC[-7],'[" & dados_mes & "]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-3],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-4]:C[-4],0)),'[" & dados_mes & "]sheet1'!C2:C2,1,0))"
+    
+    Range("H7").Select
+    Selection.AutoFill Destination:=Range("$H$7:$H$" & linha)
+    
+    Range("I7").Select
+    ActiveCell.FormulaR1C1 = _
+        "=IFERROR(VLOOKUP(RC[-8],'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-4],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-5]:C[-5],0)),'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2:C2,1,0))"
+    
+    Range("I7").Select
+    Selection.AutoFill Destination:=Range("$I$7:$I$" & linha)
+    
+    
+'FILTRO AVANÇADO PARA TERCEIROS
+    
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    
+    Range("A6:J" & linha).AdvancedFilter Action:=xlFilterInPlace, _
+    CriteriaRange:=Sheets("CRITERIO").Range("A1:" & terceiro), Unique:=False
+    
+    Range("j6").Select
+    final = Range("I6").End(xlDown).Offset(0, 1).Address
+
+    Range("J7:" & final).SpecialCells(xlCellTypeVisible).Value = "TERCEIRO"
+    
+  
+ 'finalizando
+     ActiveSheet.ShowAllData
+     Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.AutoFilter Field:=7, Criteria1:="#N/D"
+    Selection.AutoFilter Field:=10, Criteria1:="="
+    
+'----------------------------------------------------------------------
+                                'CT
+    
+ElseIf Range("A3").Text Like "*" & "Controle de Terceiros" & "*" Then
+    
+
+    Dim lindupli As String
+    
+'removendo duplicatas
+    linhadupli = Range("a6").End(xlDown).Row
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    ActiveSheet.Range("$A$6:$F$" & linhadupli).RemoveDuplicates Columns:=Array(1, 2, 3, 4, 5, _
+        6), Header:=xlYes
+    
+'Removendo False
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    
+    'Excluir somente o que está como false (no filtro)
+      
+Selection.AutoFilter Field:=6, Criteria1:="false"
+   cel_final = Range("f6").End(xlDown).Address
+    Range("a7:" & cel_final).SpecialCells(xlCellTypeVisible).Select
+    Selection.EntireRow.Delete
+    Selection.AutoFilter Field:=6
+    
+'Removendo usuário fornecedor
+   Selection.AutoFilter Field:=3, Criteria1:="Usuário Fornecedor"
+    cel_final = Range("f6").End(xlDown).Address
+    Range("a7:" & cel_final).SpecialCells(xlCellTypeVisible).Select
+    Selection.EntireRow.Delete
+    Selection.AutoFilter Field:=3
+
+'FORMULA ATIVOS
+        'SEERRO(PROCV(A7;ATIVOS;1;0);PROCV(ÍNDICE([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!$B$2:$B$8690;CORRESP(B7;[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C$2:C$8690;0));ATIVOS;1;0))
+    
+'linha definirá o intervalo máximo
+    linha = Range("f6").End(xlDown).Row
+    
+    Range("G7").Select
+    ActiveCell.FormulaR1C1 = _
+    "=IFERROR(VLOOKUP(RC[-6],'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-2],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-3]:C[-3],0)),'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0))"
+    
+    Range("G7").Select
+    Selection.AutoFill Destination:=Range("$G$7:$G$" & linha)
+    Range("H7").Select
+    
+    ActiveCell.FormulaR1C1 = _
+        "=IFERROR(VLOOKUP(RC[-7],'[" & dados_mes & "]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-3],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-4]:C[-4],0)),'[" & dados_mes & "]sheet1'!C2:C2,1,0))"
+    Range("H7").Select
+    Selection.AutoFill Destination:=Range("$H$7:$H$" & linha)
+    Range("I7").Select
+    
+    ActiveCell.FormulaR1C1 = _
+        "=IFERROR(VLOOKUP(RC[-8],'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-4],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-5]:C[-5],0)),'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2,1,0))"
+     
+    Range("I7").Select
+    Selection.AutoFill Destination:=Range("$I$7:$I$" & linha)
+    
+    
+'FILTRO AVANÇADO PARA TERCEIROS
+     Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+   
+    Application.CutCopyMode = False
+    Application.CutCopyMode = False
+    Application.CutCopyMode = False
+'CAMPO DE CRITÉRIOS (ALTERAR QUANDO NECESSÁRIO)
+
+    'Adicionar TERCEIRO na coluna OBS.: (NO FILTRO)
+    
+    Selection.AdvancedFilter Action:=xlFilterInPlace, _
+    CriteriaRange:=Sheets("CRITERIO").Range("A1:" & terceiro), Unique:=False
+
+    Range("j6").Select
+    final = Range("I6").End(xlDown).Offset(0, 1).Address
+    Range("J7:" & final).SpecialCells(xlCellTypeVisible).Value = "TERCEIRO"
+    
+  'finalizando
+     ActiveSheet.ShowAllData
+     Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.AutoFilter Field:=7, Criteria1:="#N/D"
+    Selection.AutoFilter Field:=10, Criteria1:="="
+   
+'--------------------------------------------------------
+                        'SPP
+    
+    ElseIf Range("A3").Text Like "*" & "SPP" & "*" Then
+    
+    
+   'Removendo False
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    
+    'Excluir somente o que está como false (no filtro)
+      
+Selection.AutoFilter Field:=6, Criteria1:="false"
+
+    cel_final = Range("f6").End(xlDown).Address
+    
+    If Range(cel_final).Value <> "" Then
+    
+    Range("a7:" & cel_final).SpecialCells(xlCellTypeVisible).Select
+    Selection.EntireRow.Delete
+    
+    End If
+    
+    Selection.AutoFilter Field:=6
+
+'FORMULA ATIVOS
+        'SEERRO(PROCV(A7;ATIVOS;1;0);PROCV(ÍNDICE([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!$B$2:$B$8690;CORRESP(B7;[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C$2:C$8690;0));ATIVOS;1;0))
+
+'linha definirá o intervalo máximo
+
+linha = Range("f6").End(xlDown).Row
+    
+    Range("G7").Select
+    ActiveCell.FormulaR1C1 = _
+    "=IFERROR(VLOOKUP(RC[-6],'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-2],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-3]:C[-3],0)),'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0))"
+            
+    Range("G7").Select
+    Selection.AutoFill Destination:=Range("$G$7:$G$" & linha)
+    Range("H7").Select
+    ActiveCell.FormulaR1C1 = _
+        "=IFERROR(VLOOKUP(RC[-7],'[" & dados_mes & "]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-3],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-4]:C[-4],0)),'[" & dados_mes & "]sheet1'!C2:C2,1,0))"
+    Range("H7").Select
+    Selection.AutoFill Destination:=Range("$H$7:$H$" & linha)
+    Range("I7").Select
+    ActiveCell.FormulaR1C1 = _
+        "=IFERROR(VLOOKUP(RC[-8],'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-4],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-5]:C[-5],0)),'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2,1,0))"
+    Range("I7").Select
+    Selection.AutoFill Destination:=Range("$I$7:$I$" & linha)
+
+'FILTRO AVANÇADO PARA TERCEIROS
+    
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Range("a6:J" & linha).AdvancedFilter Action:=xlFilterInPlace, CriteriaRange:= _
+        Sheets("CRITERIO").Range("A1:" & terceiro), Unique:=False
+    Range("J6").Select
+    'Final = Range("i6").SpecialCells(xlLastCell).Address
+    final = Range("I6").End(xlDown).Offset(0, 1).Address
+    Range("J7:" & final).SpecialCells(xlCellTypeVisible).Value = "TERCEIRO"
+    
+    Range("A6").Select
+
+'finalizando
+     ActiveSheet.ShowAllData
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.AutoFilter Field:=7, Criteria1:="#N/D"
+    Selection.AutoFilter Field:=10, Criteria1:="="
+    
+    
+     
+'-----------------------------------------------------------------------------------
+                                    'LPP
+
+ElseIf Range("A3").Text Like "*" & "LPP" & "*" Then
+    
+    'Excluir somente o que está como false (no filtro)
+      
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+      
+Selection.AutoFilter Field:=6, Criteria1:="false"
+
+    cel_final = Range("f6").End(xlDown).Address
+    
+    If Range(cel_final).Value <> "" Then
+    
+    Range("a7:" & cel_final).SpecialCells(xlCellTypeVisible).Select
+    Selection.EntireRow.Delete
+    
+    End If
+    
+    Selection.AutoFilter Field:=6
+
+'FORMULA ATIVOS
+
+'linha definirá o intervalo máximo
+    
+    linha = Range("f6").End(xlDown).Row
+
+    'caminho = "\\tdbsbc01\Comum\ComumIT\" & ano & "\Planning & Security\Security\SOX\CONTROLES PERIÓDICOS IT\" & mes_ant & " - " & Left(nome_mes_ant, 3) & Right(ano, 2) & "\4 Usuários Ativos"
+    
+    Range("G7").Select
+    ActiveCell.FormulaR1C1 = _
+    "=IFERROR(VLOOKUP(RC[-6],'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-2],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-3]:C[-3],0)),'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0))"
+           
+    Range("G7").Select
+    Selection.AutoFill Destination:=Range("$G$7:$G$" & linha)
+    Range("H7").Select
+    ActiveCell.FormulaR1C1 = _
+        "=IFERROR(VLOOKUP(RC[-7],'[" & dados_mes & "]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-3],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-4]:C[-4],0)),'[" & dados_mes & "]sheet1'!C2:C2,1,0))"
+    Range("H7").Select
+    Selection.AutoFill Destination:=Range("$H$7:$H$" & linha)
+    Range("I7").Select
+    ActiveCell.FormulaR1C1 = _
+        "=IFERROR(VLOOKUP(RC[-8],'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-4],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-5]:C[-5],0)),'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2:C2,1,0))"
+    Range("I7").Select
+    Selection.AutoFill Destination:=Range("$I$7:$I$" & linha)
+
+'FILTRO AVANÇADO PARA TERCEIROS
+    
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Range("A6:J" & linha).AdvancedFilter Action:=xlFilterInPlace, CriteriaRange:= _
+        Sheets("CRITERIO").Range("A1:" & terceiro), Unique:=False
+    
+    Range("j6").Select
+    final = Range("I6").End(xlDown).Offset(0, 1).Address
+    Range("J7:" & final).SpecialCells(xlCellTypeVisible).Value = "TERCEIRO"
+    
+'finalizando
+    
+    Range("a6").Select
+     ActiveSheet.ShowAllData
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.AutoFilter Field:=7, Criteria1:="#N/D"
+    Selection.AutoFilter Field:=10, Criteria1:="="
+    
+'----------------------------------------------------------------
+                            'NQC
+    
+ElseIf Range("A3").Text Like "*" & "NQC" & "*" Then
+    
+    'Excluir somente o que está como false (no filtro)
+      
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+      
+Selection.AutoFilter Field:=6, Criteria1:="false"
+
+    cel_final = Range("f6").End(xlDown).Address
+    
+    If Range(cel_final).Value <> "" Then
+    
+    Range("a7:" & cel_final).SpecialCells(xlCellTypeVisible).Select
+    Selection.EntireRow.Delete
+    
+    End If
+    
+    Selection.AutoFilter Field:=6
+    
+'FORMULA ATIVOS
+
+    'SEERRO(PROCV(A7;ATIVOS;1;0);PROCV(ÍNDICE([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!$B$2:$B$8690;CORRESP(B7;[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C$2:C$8690;0));ATIVOS;1;0))
+
+'linha definirá o intervalo máximo
+
+    linha = Range("F6").End(xlDown).Row
+     
+    Range("G7").Select
+    ActiveCell.FormulaR1C1 = _
+    "=IFERROR(VLOOKUP(RC[-6],'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-2],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-3]:C[-3],0)),'[TDB_SEC_DADOS_FUNCIONARIOS.xls]sheet1'!C3:C3,1,0))"
+        
+    Range("G7").Select
+    Selection.AutoFill Destination:=Range("$G$7:$G$" & linha)
+    Range("H7").Select
+    ActiveCell.FormulaR1C1 = _
+        "=IFERROR(VLOOKUP(RC[-7],'[" & dados_mes & "]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-3],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-4]:C[-4],0)),'[" & dados_mes & "]sheet1'!C2:C2,1,0))"
+    Range("H7").Select
+    Selection.AutoFill Destination:=Range("$H$7:$H$" & linha)
+    Range("I7").Select
+    ActiveCell.FormulaR1C1 = _
+        "=IFERROR(VLOOKUP(RC[-8],'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2:C2,1,0),VLOOKUP(INDEX([LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C2:C2,MATCH(RC[-4],[LISTA_DE_USUARIOS_AD.xls]showAllUsersReport!C[-5]:C[-5],0)),'[TDB_SEC_DEMITIDOS_FULL.xls]sheet1'!C2:C2,1,0))"
+    Range("I7").Select
+    Selection.AutoFill Destination:=Range("$I$7:$I$" & linha)
+
+'FILTRO AVANÇADO PARA TERCEIROS
+    
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Range("A6:J" & linha).AdvancedFilter Action:=xlFilterInPlace, CriteriaRange:= _
+        Sheets("CRITERIO").Range("A1:" & terceiro), Unique:=False
+    Range("j6").Select
+    final = Range("I6").End(xlDown).Offset(0, 1).Address
+    Range("J7:" & final).SpecialCells(xlCellTypeVisible).Value = "TERCEIRO"
+    
+'finalizando
+     ActiveSheet.ShowAllData
+    Range("A6").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.AutoFilter Field:=7, Criteria1:="#N/D"
+    Selection.AutoFilter Field:=10, Criteria1:="="
+    
+End If
+    
+'Identificar aba
+
+validacao = Range("a6").End(xlDown).Value
+
+If validacao = "" Then
+
+
+'Azul escuro
+
+ActiveWorkbook.Sheets(comando).Tab.ColorIndex = 5
+        
+Range("a1").Select
+
+MsgBox "Seu relatório não teve pendência :)"
+
+Else
+
+MsgBox "Seu relatório teve pendência(s) :("
+
+End If
+
+'--
+
+comando = UCase(InputBox("Selecione o sistema que gostaria de realizar a verificação:" & Chr(13) & _
+"NCS" & Chr(9) & _
+"SVD" & Chr(9) & _
+"CT" & Chr(9) & _
+"SPP" & Chr(9) & _
+"LPP" & Chr(9) & _
+"NQC" & Chr(13) & "Ou se prefere sair digite FIM"))
+
+Do While comando <> "NCS" And comando <> "SVD" _
+And comando <> "CT" And comando <> "SPP" _
+And comando <> "LPP" And comando <> "NQC" _
+And comando <> "FIM"
+
+
+comando = InputBox("Você digitou uma opção não válida :(" & Chr(13) & "Por favor, digite uma opção válida:" _
+& Chr(13) & _
+"NCS" & Chr(9) & _
+"SVD" & Chr(9) & _
+"CT" & Chr(9) & _
+"SPP" & Chr(9) & _
+"LPP" & Chr(9) & _
+"NQC" & Chr(13) & "Ou se prefere sair digite FIM")
+      
+      If UCase(comando) = "FIM" Then
+        
+        Workbooks("TDB_SEC_DADOS_FUNCIONARIOS.xls").Close SaveChanges:=False
+        Workbooks(dados_mes).Close SaveChanges:=False
+        Workbooks("TDB_SEC_DEMITIDOS_FULL.xls").Close SaveChanges:=False
+        
+        
+      Exit Sub
+      End If
+
+Loop
+
+If comando = "FIM" Then
+        
+        Workbooks("TDB_SEC_DADOS_FUNCIONARIOS.xls").Close SaveChanges:=False
+        Workbooks(dados_mes).Close SaveChanges:=False
+        Workbooks("TDB_SEC_DEMITIDOS_FULL.xls").Close SaveChanges:=False
+        
+        
+      Exit Sub
+      End If
+
+ActiveWindow.Zoom = 55
+
+Dim WS_Count As Integer
+Dim i As Integer
+
+WS_Count = ActiveWorkbook.Worksheets.count
+
+
+For i = 1 To WS_Count
+Do While ActiveWorkbook.Worksheets(i).name = comando
+ MsgBox "Já existe uma Planilha com o nome " & comando, vbCritical, "ATENÇÃO"
+ comando = UCase(InputBox("Selecione o sistema que gostaria de realizar a verificação:" & Chr(13) & _
+"NCS" & Chr(9) & _
+"SVD" & Chr(9) & _
+"CT" & Chr(9) & _
+"SPP" & Chr(9) & _
+"LPP" & Chr(9) & _
+"NQC" & Chr(13) & "Ou se prefere sair digite FIM"))
+
+Loop
+Next i
+         
+For i = WS_Count To 1
+Do While ActiveWorkbook.Worksheets(i).name = UCase(comando)
+ MsgBox "Já existe uma Planilha com o nome " & UCase(comando), vbCritical, "ATENÇÃO"
+ comando = InputBox("Selecione o sistema que gostaria de realizar a verificação:" & Chr(13) & _
+"NCS" & Chr(9) & _
+"SVD" & Chr(9) & _
+"CT" & Chr(9) & _
+"SPP" & Chr(9) & _
+"LPP" & Chr(9) & _
+"NQC" & Chr(13) & "Ou se prefere sair digite FIM")
+
+Loop
+Next i
+         
+For Each sh In Worksheets
+Do While UCase(sh.name) = comando
+
+ MsgBox "Já existe uma Planilha com o nome " & comando, vbCritical, "ATENÇÃO"
+ comando = UCase(InputBox("Selecione o sistema que gostaria de realizar a verificação:" & Chr(13) & _
+"NCS" & Chr(9) & _
+"SVD" & Chr(9) & _
+"CT" & Chr(9) & _
+"SPP" & Chr(9) & _
+"LPP" & Chr(9) & _
+"NQC" & Chr(13) & "Ou se prefere sair digite FIM"))
+
+Loop
+Next sh
+
+Loop
+
+
+'ir para a proxima aba e recomeçar a macro, até sheets("CRITERIO")
+
+
+End Sub
