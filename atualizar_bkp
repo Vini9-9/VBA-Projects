@@ -1,0 +1,43 @@
+Sub atualizar_bkp()
+
+Dim wsOriginal As Worksheet
+
+Set wsOriginal = Workbooks(ActiveWorkbook.name).Worksheets(ActiveSheet.name)
+
+comando = MsgBox("Remover backup anterior? ", vbYesNo)
+
+If comando = vbYes Then
+
+ActiveSheet.Previous.Select
+ActiveSheet.Delete
+
+End If
+
+mes_ant = mes_anterior(Month(Now))
+
+nome_mes_ref = StrConv(MonthName(mes_ant), vbProperCase)
+
+caminho = diretorio_default(mes_ant) & "\VERIFICAÇÃO\"
+
+system = descobrir_sistema(ActiveWorkbook.name)
+
+On Error GoTo MSGerror
+
+    Workbooks.Open Filename:=caminho & system & "_OK.xls", ReadOnly:=True
+    
+    Sheets(system).Select
+    Sheets(system).Copy Before:=wsOriginal
+    
+    wsOriginal.Activate
+    
+    Sheets(system).name = "BKP_" & mes_ant
+    Sheets("BKP_" & mes_ant).Tab.ColorIndex = 48
+    
+    Exit Sub
+    
+MSGerror:
+
+MsgBox ("Não foi localizado o arquivo:" & Chr(10) _
+& caminho & system & "_OK.xls")
+    
+End Sub
