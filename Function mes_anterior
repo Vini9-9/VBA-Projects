@@ -1,9 +1,0 @@
-Public Function mes_anterior(x As Integer) As Integer
-    If x = 1 Then
-    mes_ant = 12
-    
-    Else
-    mes_ant = x - 1
-    
-    End If
-  End Function
