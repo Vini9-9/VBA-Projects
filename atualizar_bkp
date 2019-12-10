@@ -13,11 +13,13 @@ ActiveSheet.Delete
 
 End If
 
-mes_ant = mes_anterior(Month(Now))
+mes_ant = mes_anterior(Month(Now)) - 1
 
-nome_mes_ref = StrConv(MonthName(mes_ant), vbProperCase)
+mes_ref = mes_solicitado(mes_ant)
 
-caminho = diretorio_default(mes_ant) & "\VERIFICAÇÃO\"
+nome_mes_ref = StrConv(MonthName(mes_ref), vbProperCase)
+
+caminho = diretorio_default(mes_ref) & "\VERIFICAÇÃO\"
 
 system = descobrir_sistema(ActiveWorkbook.name)
 
@@ -30,8 +32,8 @@ On Error GoTo MSGerror
     
     wsOriginal.Activate
     
-    Sheets(system).name = "BKP_" & mes_ant
-    Sheets("BKP_" & mes_ant).Tab.ColorIndex = 48
+    Sheets(system).name = "BKP_" & mes_ref
+    Sheets("BKP_" & mes_ref).Tab.ColorIndex = 48
     
     Exit Sub
     
