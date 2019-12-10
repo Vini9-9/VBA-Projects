@@ -1,3 +1,0 @@
-Public Function ToColletter(Collet)
-    ToColletter = Split(Cells(1, Collet).Address, "$")(1)
-End Function
