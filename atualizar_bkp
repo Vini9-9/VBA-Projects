@@ -1,3 +1,5 @@
+'Macro utilizada para auxiliar na segunda validação dos usuários utilizando o backup de revisões de meses anteriores
+
 Sub atualizar_bkp()
 
 Dim wbSystem As Workbook
@@ -34,8 +36,6 @@ On Error GoTo MSGerror
     Sheets(system).Copy Before:=wsOriginal
     
     wbSystem.Close
-    
-'    wsOriginal.Activate
     
     Sheets(system).name = "BKP_" & mes_ref
     Sheets("BKP_" & mes_ref).Tab.ColorIndex = 48
