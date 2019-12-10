@@ -1,5 +1,7 @@
 Sub atualizar_bkp()
 
+Dim wbSystem As Workbook
+
 Dim wsOriginal As Worksheet
 
 Set wsOriginal = Workbooks(ActiveWorkbook.name).Worksheets(ActiveSheet.name)
@@ -17,8 +19,6 @@ mes_ant = mes_anterior(Month(Now)) - 1
 
 mes_ref = mes_solicitado(mes_ant)
 
-nome_mes_ref = StrConv(MonthName(mes_ref), vbProperCase)
-
 caminho = diretorio_default(mes_ref) & "\VERIFICAÇÃO\"
 
 system = descobrir_sistema(ActiveWorkbook.name)
@@ -28,18 +28,40 @@ On Error GoTo MSGerror
     Workbooks.Open Filename:=caminho & system & "_OK.xls", ReadOnly:=True
     
     Sheets(system).Select
+    
+    Set wbSystem = Workbooks(ActiveWorkbook.name)
+    
     Sheets(system).Copy Before:=wsOriginal
     
-    wsOriginal.Activate
+    wbSystem.Close
+    
+'    wsOriginal.Activate
     
     Sheets(system).name = "BKP_" & mes_ref
     Sheets("BKP_" & mes_ref).Tab.ColorIndex = 48
+    
+    MsgBox ("Atualizado backup com o mês: " & mes_ref)
     
     Exit Sub
     
 MSGerror:
 
 MsgBox ("Não foi localizado o arquivo:" & Chr(10) _
-& caminho & system & "_OK.xls")
+& system & "_OK.xls" & Chr(10) & "Abrindo " & system & "_VERIFICAR")
+
+Workbooks.Open Filename:=caminho & system & "_VERIFICAR.xls", ReadOnly:=True
+
+Sheets(system).Select
+    
+    Set wbSystem = Workbooks(ActiveWorkbook.name)
+    
+    Sheets(system).Copy Before:=wsOriginal
+    
+    wbSystem.Close
+    
+    Sheets(system).name = "*BKP_" & mes_ref
+    Sheets("*BKP_" & mes_ref).Tab.ColorIndex = 48
+    
+    MsgBox ("Atualizado backup com o mês: " & mes_ref)
     
 End Sub
