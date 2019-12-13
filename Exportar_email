@@ -1,0 +1,125 @@
+Private Sub Exportar_bd()
+    Dim OutlookApplication As Object
+    Dim CMails As Outlook.Items
+    Dim VMails As Variant
+    Dim iItem
+    Dim i As Long
+    Dim assunto As String
+    Dim banco As String
+    Dim corpo As String
+    
+    
+    Set OutlookApplication = GetOutlookApplication
+    If OutlookApplication Is Nothing Then Exit Sub
+    
+    Set CMails = OutlookApplication.Session.Folders("vipdsilva@email.com.br").Folders("BD").Items
+    ReDim VMails(1 To CMails.Count, 0 To 1)
+    
+    assunto_default = "*mes " & mes_anterior(Month(Now)) & "/*"
+    
+    For i = 1 To CMails.Count
+        Set iItem = CMails.Item(i)
+        If TypeName(iItem) <> "MailItem" Then GoTo NextItem
+        
+        assunto = iItem.Subject
+        
+    If assunto Like assunto_default Then
+        
+        direita_excluir = Right(assunto, 14)
+        esquerda_excluir = Left(assunto, 19)
+        
+        assunto = WorksheetFunction.Substitute(assunto, direita_excluir, "")
+        assunto = WorksheetFunction.Substitute(assunto, esquerda_excluir, "")
+        
+        banco = WorksheetFunction.Substitute(assunto, " ", "")
+        
+        assunto = iItem.Subject
+    
+    With iItem
+    corpo = .Body
+    End With
+     
+     'Ajustando Assunto
+     assunto = WorksheetFunction.Substitute(assunto, "/", "_")
+     arquivo = "C:\Users\vipdsilva\Desktop\BACKUP\Txt_bd\" & mes_anterior(Month(Now)) & "\" & assunto & ".msg"
+    
+     iItem.SaveAs arquivo
+     
+     MsgBox "Salvo arquivo: " & Chr(10) & arquivo
+    
+    'Export to .TXT
+    
+        Dim iArq As Long
+    
+        iArq = FreeFile
+    
+        Open "C:\Users\vipdsilva\Desktop\BACKUP\Txt_bd\" & mes_anterior(Month(Now)) & "\" & banco & ".txt" For Output As iArq
+    
+        Print #iArq, corpo
+    
+        Close #iArq
+    
+        MsgBox "Salvo arquivo: " & Chr(10) & banco & ".txt"
+        
+        End If
+
+NextItem:
+    Next i
+    
+    MsgBox "Finalizado :)"
+    
+End Sub
+
+'*/---------------------------------------------------------------------------------------------------------------------------*/
+
+Sub ExportToTXT(assunto As String, banco As String, corpo As String)
+
+    Dim iArq As Long
+
+    iArq = FreeFile
+
+    Open "C:\Users\vipdsilva\Desktop\BACKUP\Txt_bd\" & Month(Now) - 1 & "\" & banco & ".txt" For Output As iArq
+
+    Print #iArq, corpo
+
+    Close #iArq
+    
+    SaveAs assunto
+    
+    MsgBox "Finalizado"
+    
+End Sub
+
+Sub SaveAs(assunto As String)
+ Dim myItem As Outlook.Inspector
+ Dim objItem As Object
+ 
+ Set myItem = Application.ActiveInspector
+ Dim strPrompt As String
+ strPrompt = "Você tem certeza que quer salvar o item?" & Chr(10) & _
+ "Se já existir um arquivo com o mesmo nome, ele irá sobrescrever"
+ If MsgBox(strPrompt, vbYesNo + vbQuestion) = vbYes Then
+ 
+  'Ajustando Assunto
+ assunto = WorksheetFunction.Substitute(assunto, "/", "_")
+ arquivo = "C:\Users\vipdsilva\Desktop\BACKUP\Txt_bd\" & Month(Now) - 1 & "\" & assunto & ".msg"
+ objItem.SaveAs arquivo
+ End If
+
+End Sub
+
+'*/---------------------------------------------------------------------------------------------------------------------------*/
+
+Private Function GetOutlookApplication() As Outlook.Application
+    Dim OutlookApplication As Outlook.Application
+    
+    On Error Resume Next
+    Set OutlookApplication = GetObject("", "Outlook.Application")
+    On Error GoTo 0
+    If OutlookApplication Is Nothing Then
+        Set OutlookApplication = CreateObject("Outlook.Application")
+    End If
+    
+    If OutlookApplication Is Nothing Then
+        MsgBox "Favor abrir o Outlook antes de prosseguir!", vbExclamation
+    End If
